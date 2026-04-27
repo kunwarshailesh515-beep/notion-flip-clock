@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            background-color: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: "Inter", -apple-system, sans-serif;
+        }
+        .clock {
+            display: flex;
+            gap: 15px;
+        }
+        .card {
+            background: #1a1a1a;
+            color: #ffffff;
+            width: 120px;
+            height: 160px;
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 80px;
+            font-weight: bold;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        /* The horizontal line in the middle */
+        .card::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(0,0,0,0.3);
+            z-index: 2;
+        }
+        .label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 14px;
+            color: #888;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="clock">
+        <div class="card" id="hours">12<div class="label" id="ampm">PM</div></div>
+        <div class="card" id="minutes">00</div>
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            let h = now.getHours();
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            
+            h = h % 12;
+            h = h ? h : 12; // convert 0 to 12
+            
+            document.getElementById('hours').firstChild.textContent = h;
+            document.getElementById('minutes').textContent = m;
+            document.getElementById('ampm').textContent = ampm;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+</body>
+</html>
