@@ -7,17 +7,14 @@
             --bg-color: #191919;
             --card-bg: #383836;
             --text-color: #ffffff;
-            --shadow: rgba(0,0,0,0.5);
-            --line: rgba(0,0,0,0.3);
+            --line: rgba(0,0,0,0.4);
         }
 
-        /* Light Mode & Notion Light Mode Detection */
         @media (prefers-color-scheme: light) {
             :root {
                 --bg-color: #ffffff;
                 --card-bg: #f7f7f7;
                 --text-color: #37352f;
-                --shadow: rgba(0,0,0,0.1);
                 --line: rgba(0,0,0,0.1);
             }
         }
@@ -29,59 +26,79 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            font-family: "Inter", -apple-system, sans-serif;
-            transition: background-color 0.3s ease;
+            font-family: "Inter", sans-serif;
         }
 
-        .clock {
-            display: flex;
-            gap: 15px;
-        }
+        .clock { display: flex; gap: 20px; }
 
-        .card {
-            background: var(--card-bg);
-            color: var(--text-color);
+        /* The Container */
+        .flip-card {
+            position: relative;
             width: 120px;
             height: 160px;
+            background: var(--card-bg);
             border-radius: 8px;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             font-size: 80px;
             font-weight: bold;
-            box-shadow: 0 10px 20px var(--shadow);
-            overflow: hidden;
+            color: var(--text-color);
+            text-align: center;
+            line-height: 160px;
         }
 
-        /* The horizontal line */
-        .card::after {
-            content: '';
+        /* Top and Bottom Halves */
+        .top, .bottom, .flap-down {
             position: absolute;
-            top: 50%;
             left: 0;
             width: 100%;
-            height: 2px;
-            background: var(--line);
-            z-index: 2;
+            height: 50%;
+            overflow: hidden;
+            background: var(--card-bg);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
         }
 
-        /* Simple Flip Animation */
-        @keyframes flip {
-            0% { transform: rotateX(0deg); }
-            50% { transform: rotateX(-90deg); }
-            100% { transform: rotateX(0deg); }
+        .top {
+            top: 0;
+            border-radius: 8px 8px 0 0;
+            line-height: 160px;
+            border-bottom: 1px solid var(--line);
         }
 
-        .flip-animate {
-            animation: flip 0.6s ease-in-out;
+        .bottom {
+            bottom: 0;
+            border-radius: 0 0 8px 8px;
+            line-height: 0;
+        }
+
+        /* The Animated Flap */
+        .flap-down {
+            top: 0;
+            border-radius: 8px 8px 0 0;
+            line-height: 160px;
+            z-index: 3;
+            transform-origin: bottom;
+            border-bottom: 1px solid var(--line);
+            transition: transform 0.6s ease-in;
+        }
+
+        .flipping .flap-down {
+            transform: rotateX(-180deg);
         }
     </style>
 </head>
 <body>
+
     <div class="clock">
-        <div class="card" id="hours">00</div>
-        <div class="card" id="minutes">00</div>
+        <div class="flip-card" id="hours-card">
+            <div class="top">00</div>
+            <div class="bottom">00</div>
+            <div class="flap-down">00</div>
+        </div>
+        <div class="flip-card" id="minutes-card">
+            <div class="top">00</div>
+            <div class="bottom">00</div>
+            <div class="flap-down">00</div>
+        </div>
     </div>
 
     <script>
@@ -89,33 +106,35 @@
 
         function updateClock() {
             const now = new Date();
-            // 24-hour format: simply pad the raw hours
             const h = String(now.getHours()).padStart(2, '0');
             const m = String(now.getMinutes()).padStart(2, '0');
-            
-            const hoursEl = document.getElementById('hours');
-            const minutesEl = document.getElementById('minutes');
 
-            // Only trigger animation and update if the value changes
             if (h !== lastH) {
-                animateFlip(hoursEl, h);
+                flip(document.getElementById('hours-card'), h);
                 lastH = h;
             }
             if (m !== lastM) {
-                animateFlip(minutesEl, m);
+                flip(document.getElementById('minutes-card'), m);
                 lastM = m;
             }
         }
 
-        function animateFlip(el, newValue) {
-            el.classList.remove('flip-animate');
-            void el.offsetWidth; // Trigger reflow to restart animation
-            el.classList.add('flip-animate');
+        function flip(card, newValue) {
+            const top = card.querySelector('.top');
+            const bottom = card.querySelector('.bottom');
+            const flap = card.querySelector('.flap-down');
+
+            // 1. Set current value to flap and bottom
+            // 2. Set new value to top (the background waiting to be revealed)
+            top.textContent = newValue;
             
-            // Update text halfway through the flip
+            card.classList.add('flipping');
+
             setTimeout(() => {
-                el.textContent = newValue;
-            }, 300);
+                card.classList.remove('flipping');
+                bottom.textContent = newValue;
+                flap.textContent = newValue;
+            }, 600);
         }
 
         setInterval(updateClock, 1000);
