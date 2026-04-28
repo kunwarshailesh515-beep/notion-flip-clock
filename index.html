@@ -7,7 +7,7 @@
             --bg-color: #191919;
             --card-bg: #383836;
             --text-color: #ffffff;
-            --line: rgba(0,0,0,0.4);
+            --line: rgba(0, 0, 0, 0.3);
         }
 
         @media (prefers-color-scheme: light) {
@@ -15,7 +15,7 @@
                 --bg-color: #ffffff;
                 --card-bg: #f7f7f7;
                 --text-color: #37352f;
-                --line: rgba(0,0,0,0.1);
+                --line: rgba(0, 0, 0, 0.1);
             }
         }
 
@@ -26,78 +26,100 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            font-family: "Inter", sans-serif;
+            font-family: "Inter", -apple-system, sans-serif;
+            transition: background-color 0.3s ease;
         }
 
-        .clock { display: flex; gap: 20px; }
+        .clock {
+            display: flex;
+            gap: 15px;
+        }
 
-        /* The Container */
-        .flip-card {
+        /* The main container for each time block (Hours / Minutes) */
+        .flip-unit {
             position: relative;
             width: 120px;
             height: 160px;
-            background: var(--card-bg);
             border-radius: 8px;
             font-size: 80px;
             font-weight: bold;
             color: var(--text-color);
-            text-align: center;
-            line-height: 160px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            perspective: 1000px; /* Gives the 3D falling effect */
         }
 
-        /* Top and Bottom Halves */
-        .top, .bottom, .flap-down {
+        /* The 4 separate panels that make up a single card */
+        .panel {
             position: absolute;
             left: 0;
             width: 100%;
             height: 50%;
-            overflow: hidden;
             background: var(--card-bg);
+            overflow: hidden;
+            text-align: center;
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
         }
 
-        .top {
+        /* Top panels (Static background + Animated flap) */
+        .panel-top {
             top: 0;
             border-radius: 8px 8px 0 0;
-            line-height: 160px;
-            border-bottom: 1px solid var(--line);
+            line-height: 160px; /* Vertically centers the top half of the text */
+            border-bottom: 1px solid var(--line); /* The crease */
+            transform-origin: bottom; /* Hinges at the bottom edge */
         }
 
-        .bottom {
+        /* Bottom panels (Static background + Animated flap) */
+        .panel-bottom {
             bottom: 0;
             border-radius: 0 0 8px 8px;
-            line-height: 0;
+            line-height: 0; /* Vertically centers the bottom half of the text */
+            transform-origin: top; /* Hinges at the top edge */
         }
 
-        /* The Animated Flap */
-        .flap-down {
-            top: 0;
-            border-radius: 8px 8px 0 0;
-            line-height: 160px;
-            z-index: 3;
-            transform-origin: bottom;
-            border-bottom: 1px solid var(--line);
-            transition: transform 0.6s ease-in;
+        /* Z-indexes to layer the flaps over the backgrounds */
+        .bg-top { z-index: 1; }
+        .bg-bottom { z-index: 1; }
+        .flap-top { z-index: 2; transform: rotateX(0deg); }
+        .flap-bottom { z-index: 2; transform: rotateX(90deg); }
+
+        /* The Animation Keyframes */
+        .flipping .flap-top {
+            /* Falls away towards the user */
+            animation: flipDownTop 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+        }
+        .flipping .flap-bottom {
+            /* Completes the fall from the middle down to the bottom */
+            animation: flipDownBottom 0.3s cubic-bezier(0, 0, 0.2, 1) 0.3s forwards;
         }
 
-        .flipping .flap-down {
-            transform: rotateX(-180deg);
+        @keyframes flipDownTop {
+            0% { transform: rotateX(0deg); }
+            100% { transform: rotateX(-90deg); }
+        }
+
+        @keyframes flipDownBottom {
+            0% { transform: rotateX(90deg); }
+            100% { transform: rotateX(0deg); }
         }
     </style>
 </head>
 <body>
 
     <div class="clock">
-        <div class="flip-card" id="hours-card">
-            <div class="top">00</div>
-            <div class="bottom">00</div>
-            <div class="flap-down">00</div>
+        <div class="flip-unit" id="hours">
+            <div class="panel panel-top bg-top">00</div>
+            <div class="panel panel-bottom bg-bottom">00</div>
+            <div class="panel panel-top flap-top">00</div>
+            <div class="panel panel-bottom flap-bottom">00</div>
         </div>
-        <div class="flip-card" id="minutes-card">
-            <div class="top">00</div>
-            <div class="bottom">00</div>
-            <div class="flap-down">00</div>
+
+        <div class="flip-unit" id="minutes">
+            <div class="panel panel-top bg-top">00</div>
+            <div class="panel panel-bottom bg-bottom">00</div>
+            <div class="panel panel-top flap-top">00</div>
+            <div class="panel panel-bottom flap-bottom">00</div>
         </div>
     </div>
 
@@ -110,30 +132,49 @@
             const m = String(now.getMinutes()).padStart(2, '0');
 
             if (h !== lastH) {
-                flip(document.getElementById('hours-card'), h);
+                if (lastH !== undefined) triggerFlip('hours', lastH, h);
+                else initCard('hours', h);
                 lastH = h;
             }
+
             if (m !== lastM) {
-                flip(document.getElementById('minutes-card'), m);
+                if (lastM !== undefined) triggerFlip('minutes', lastM, m);
+                else initCard('minutes', m);
                 lastM = m;
             }
         }
 
-        function flip(card, newValue) {
-            const top = card.querySelector('.top');
-            const bottom = card.querySelector('.bottom');
-            const flap = card.querySelector('.flap-down');
+        function initCard(id, value) {
+            const unit = document.getElementById(id);
+            unit.querySelector('.bg-top').textContent = value;
+            unit.querySelector('.bg-bottom').textContent = value;
+            unit.querySelector('.flap-top').textContent = value;
+            unit.querySelector('.flap-bottom').textContent = value;
+        }
 
-            // 1. Set current value to flap and bottom
-            // 2. Set new value to top (the background waiting to be revealed)
-            top.textContent = newValue;
-            
-            card.classList.add('flipping');
+        function triggerFlip(id, oldVal, newVal) {
+            const unit = document.getElementById(id);
+            const bgTop = unit.querySelector('.bg-top');
+            const bgBottom = unit.querySelector('.bg-bottom');
+            const flapTop = unit.querySelector('.flap-top');
+            const flapBottom = unit.querySelector('.flap-bottom');
 
+            // 1. Prepare the elements for the visual flip
+            bgTop.textContent = newVal;       // The static top background waits with the NEW number
+            bgBottom.textContent = oldVal;    // The static bottom stays on the OLD number
+            flapTop.textContent = oldVal;     // The falling flap shows the OLD number
+            flapBottom.textContent = newVal;  // The finishing flap shows the NEW number
+
+            // 2. Trigger the CSS animation
+            unit.classList.remove('flipping');
+            void unit.offsetWidth; // This forces the browser to reset the animation
+            unit.classList.add('flipping');
+
+            // 3. Clean up the DOM after the 600ms animation finishes
             setTimeout(() => {
-                card.classList.remove('flipping');
-                bottom.textContent = newValue;
-                flap.textContent = newValue;
+                bgBottom.textContent = newVal;
+                flapTop.textContent = newVal;
+                unit.classList.remove('flipping');
             }, 600);
         }
 
