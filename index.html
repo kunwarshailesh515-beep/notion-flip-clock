@@ -1,198 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-    :root {
-      --bg: #191919;
-      --card: #383836;
-      --text: #ffffff;
-      --line: rgba(0,0,0,0.35);
-      --date: rgba(255,255,255,0.6);
-    }
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: #191919;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Inter, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: light) { body { background: #fff; } }
 
-    @media (prefers-color-scheme: light) {
-      :root {
-        --bg: #ffffff;
-        --card: #f0f0ee;
-        --text: #37352f;
-        --line: rgba(0,0,0,0.15);
-        --date: rgba(55,53,47,0.55);
-      }
-    }
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2vw;
+}
 
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
+.row { display: flex; gap: 1.5vw; }
 
-    body {
-      background: var(--bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: "Inter", -apple-system, sans-serif;
-    }
+.card {
+  position: relative;
+  width: 16vw;
+  height: 21vw;
+  border-radius: 6px;
+  font-size: 14vw;
+  font-weight: 700;
+  color: #fff;
+  perspective: 800px;
+}
+@media (prefers-color-scheme: light) { .card { color: #37352f; } }
 
-    .clock-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 100%;
-      gap: 3cqw;
-      container-type: inline-size;
-      padding: 4cqw 2cqw;
-    }
+.half {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: #2d2d2b;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+@media (prefers-color-scheme: light) { .half { background: #efefed; } }
 
-    .clock-row {
-      display: flex;
-      gap: 2cqw;
-    }
+.t {
+  top: 0;
+  border-radius: 6px 6px 0 0;
+  border-bottom: 1px solid rgba(0,0,0,0.4);
+  transform-origin: center bottom;
+}
 
-    .flip-unit {
-      position: relative;  /* critical: panels are absolute inside this */
-      display: block;
-      width: 28cqw;
-      height: 37cqw;
-      font-size: 20cqw;
-      font-weight: bold;
-      color: var(--text);
-      perspective: 600px;
-    }
+.b {
+  bottom: 0;
+  border-radius: 0 0 6px 6px;
+  transform-origin: center top;
+}
 
-    .panel {
-      position: absolute;  /* all 4 panels sit on top of each other */
-      left: 0;
-      width: 100%;
-      height: 50%;
-      background: var(--card);
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-    }
+/* num is a full-card-height box inside each half-height div.
+   In .t it's anchored to top → we see top portion of digit.
+   In .b it's anchored to bottom → we see bottom portion of digit. */
+.num {
+  position: absolute;
+  left: 0; right: 0;
+  height: 21vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.t .num { top: 0; }
+.b .num { bottom: 0; }
 
-    .panel-top {
-      top: 0;
-      border-radius: 5px 5px 0 0;
-      align-items: flex-end;
-      padding-bottom: 0.5cqw;
-      border-bottom: 1px solid var(--line);
-      transform-origin: bottom;
-    }
+.bg-t { z-index: 1; }
+.bg-b { z-index: 1; }
+.fl-t { z-index: 3; }
+.fl-b { z-index: 3; transform: rotateX(90deg); }
 
-    .panel-bottom {
-      bottom: 0;
-      border-radius: 0 0 5px 5px;
-      align-items: flex-start;
-      padding-top: 0.5cqw;
-      transform-origin: top;
-    }
+.card.go .fl-t { animation: foldT 0.25s ease-in forwards; }
+.card.go .fl-b { animation: foldB 0.25s ease-out 0.25s forwards; }
 
-    .bg-top    { z-index: 1; }
-    .bg-bottom { z-index: 1; }
-    .flap-top  { z-index: 2; transform: rotateX(0deg); }
-    .flap-bottom { z-index: 2; transform: rotateX(90deg); }
+@keyframes foldT { to   { transform: rotateX(-90deg); } }
+@keyframes foldB { from { transform: rotateX(90deg); } to { transform: rotateX(0deg); } }
 
-    .flipping .flap-top {
-      animation: flipTop 0.3s cubic-bezier(0.4,0,1,1) forwards;
-    }
-    .flipping .flap-bottom {
-      animation: flipBot 0.3s cubic-bezier(0,0,0.2,1) 0.3s forwards;
-    }
-
-    @keyframes flipTop {
-      from { transform: rotateX(0deg); }
-      to   { transform: rotateX(-90deg); }
-    }
-
-    @keyframes flipBot {
-      from { transform: rotateX(90deg); }
-      to   { transform: rotateX(0deg); }
-    }
-
-    .date-label {
-      font-size: 4cqw;
-      font-weight: 500;
-      letter-spacing: 0.4em;
-      color: var(--date);
-      white-space: nowrap;
-    }
-  </style>
+.date-txt {
+  font-size: 2.5vw;
+  font-weight: 500;
+  letter-spacing: 0.4em;
+  color: rgba(255,255,255,0.55);
+  white-space: nowrap;
+}
+@media (prefers-color-scheme: light) { .date-txt { color: rgba(55,53,47,0.5); } }
+</style>
 </head>
 <body>
 
-  <div class="clock-wrap">
-    <div class="clock-row">
-      <div class="flip-unit" id="hours">
-        <div class="panel panel-top bg-top"></div>
-        <div class="panel panel-bottom bg-bottom"></div>
-        <div class="panel panel-top flap-top"></div>
-        <div class="panel panel-bottom flap-bottom"></div>
-      </div>
-      <div class="flip-unit" id="minutes">
-        <div class="panel panel-top bg-top"></div>
-        <div class="panel panel-bottom bg-bottom"></div>
-        <div class="panel panel-top flap-top"></div>
-        <div class="panel panel-bottom flap-bottom"></div>
-      </div>
+<div class="wrap">
+  <div class="row">
+    <div class="card" id="hCard">
+      <div class="half t bg-t"><span class="num" id="hBT"></span></div>
+      <div class="half b bg-b"><span class="num" id="hBB"></span></div>
+      <div class="half t fl-t"><span class="num" id="hFT"></span></div>
+      <div class="half b fl-b"><span class="num" id="hFB"></span></div>
     </div>
-    <div class="date-label" id="date"></div>
+    <div class="card" id="mCard">
+      <div class="half t bg-t"><span class="num" id="mBT"></span></div>
+      <div class="half b bg-b"><span class="num" id="mBB"></span></div>
+      <div class="half t fl-t"><span class="num" id="mFT"></span></div>
+      <div class="half b fl-b"><span class="num" id="mFB"></span></div>
+    </div>
   </div>
+  <div class="date-txt" id="dt"></div>
+</div>
 
-  <script>
-    let lastH, lastM;
-    const days = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
+<script>
+const DAYS = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
+let pH = null, pM = null;
+const $ = id => document.getElementById(id);
 
-    function initCard(id, v) {
-      document.getElementById(id).querySelectorAll('.panel').forEach(p => p.textContent = v);
-    }
+function setAll(p, v) {
+  $(`${p}BT`).textContent = v;
+  $(`${p}BB`).textContent = v;
+  $(`${p}FT`).textContent = v;
+  $(`${p}FB`).textContent = v;
+}
 
-    function triggerFlip(id, oldV, newV) {
-      const unit = document.getElementById(id);
-      unit.querySelector('.bg-top').textContent = newV;
-      unit.querySelector('.bg-bottom').textContent = oldV;
-      unit.querySelector('.flap-top').textContent = oldV;
-      unit.querySelector('.flap-bottom').textContent = newV;
-      unit.classList.remove('flipping');
-      void unit.offsetWidth;
-      unit.classList.add('flipping');
-      setTimeout(() => {
-        unit.querySelector('.bg-bottom').textContent = newV;
-        unit.querySelector('.flap-top').textContent = newV;
-        unit.classList.remove('flipping');
-      }, 620);
-    }
+function flip(cardId, p, oldV, newV) {
+  $(`${p}BT`).textContent = newV;
+  $(`${p}BB`).textContent = oldV;
+  $(`${p}FT`).textContent = oldV;
+  $(`${p}FB`).textContent = newV;
+  const c = $(cardId);
+  c.classList.remove('go');
+  void c.offsetWidth;
+  c.classList.add('go');
+  setTimeout(() => {
+    $(`${p}BB`).textContent = newV;
+    $(`${p}FT`).textContent = newV;
+    c.classList.remove('go');
+  }, 550);
+}
 
-    function tick() {
-      const now = new Date();
-      const h = String(now.getHours()).padStart(2, '0');
-      const m = String(now.getMinutes()).padStart(2, '0');
+function tick() {
+  const now = new Date();
+  const h = now.getHours().toString().padStart(2, '0');
+  const m = now.getMinutes().toString().padStart(2, '0');
 
-      if (h !== lastH) {
-        lastH === undefined ? initCard('hours', h) : triggerFlip('hours', lastH, h);
-        lastH = h;
-      }
-      if (m !== lastM) {
-        lastM === undefined ? initCard('minutes', m) : triggerFlip('minutes', lastM, m);
-        lastM = m;
-      }
+  if (pH === null) setAll('h', h);
+  else if (h !== pH) flip('hCard', 'h', pH, h);
+  pH = h;
 
-      const d  = now.getDate().toString().padStart(2, '0');
-      const mo = (now.getMonth() + 1).toString().padStart(2, '0');
-      document.getElementById('date').textContent = days[now.getDay()] + '  ' + d + '|' + mo;
-    }
+  if (pM === null) setAll('m', m);
+  else if (m !== pM) flip('mCard', 'm', pM, m);
+  pM = m;
 
-    setInterval(tick, 1000);
-    tick();
-  </script>
+  const d = now.getDate().toString().padStart(2, '0');
+  const mo = (now.getMonth() + 1).toString().padStart(2, '0');
+  $('dt').textContent = `${DAYS[now.getDay()]}  ${d}|${mo}`;
+}
 
+setInterval(tick, 1000);
+tick();
+</script>
 </body>
 </html>
