@@ -30,25 +30,32 @@
             transition: background-color 0.3s ease;
         }
 
+        /* New container to stack the clock and date */
+        .clock-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px; /* Space between clock and date */
+        }
+
         .clock {
             display: flex;
             gap: 15px;
         }
 
-        /* The main container for each time block (Hours / Minutes) */
+        /* Scaled down by 15% */
         .flip-unit {
             position: relative;
-            width: 120px;
-            height: 160px;
+            width: 102px;   /* Was 120px */
+            height: 136px;  /* Was 160px */
             border-radius: 8px;
-            font-size: 80px;
+            font-size: 68px; /* Was 80px */
             font-weight: bold;
             color: var(--text-color);
             box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-            perspective: 1000px; /* Gives the 3D falling effect */
+            perspective: 1000px; 
         }
 
-        /* The 4 separate panels that make up a single card */
         .panel {
             position: absolute;
             left: 0;
@@ -61,36 +68,30 @@
             backface-visibility: hidden;
         }
 
-        /* Top panels (Static background + Animated flap) */
         .panel-top {
             top: 0;
             border-radius: 8px 8px 0 0;
-            line-height: 160px; /* Vertically centers the top half of the text */
-            border-bottom: 1px solid var(--line); /* The crease */
-            transform-origin: bottom; /* Hinges at the bottom edge */
+            line-height: 136px; /* Scaled to match new height */
+            border-bottom: 1px solid var(--line); 
+            transform-origin: bottom; 
         }
 
-        /* Bottom panels (Static background + Animated flap) */
         .panel-bottom {
             bottom: 0;
             border-radius: 0 0 8px 8px;
-            line-height: 0; /* Vertically centers the bottom half of the text */
-            transform-origin: top; /* Hinges at the top edge */
+            line-height: 0; 
+            transform-origin: top; 
         }
 
-        /* Z-indexes to layer the flaps over the backgrounds */
         .bg-top { z-index: 1; }
         .bg-bottom { z-index: 1; }
         .flap-top { z-index: 2; transform: rotateX(0deg); }
         .flap-bottom { z-index: 2; transform: rotateX(90deg); }
 
-        /* The Animation Keyframes */
         .flipping .flap-top {
-            /* Falls away towards the user */
             animation: flipDownTop 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
         }
         .flipping .flap-bottom {
-            /* Completes the fall from the middle down to the bottom */
             animation: flipDownBottom 0.3s cubic-bezier(0, 0, 0.2, 1) 0.3s forwards;
         }
 
@@ -103,31 +104,47 @@
             0% { transform: rotateX(90deg); }
             100% { transform: rotateX(0deg); }
         }
+
+        /* Styling for the new date text */
+        .date-display {
+            color: var(--text-color);
+            font-size: 22px;
+            font-weight: 500;
+            letter-spacing: 2px;
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
 
-    <div class="clock">
-        <div class="flip-unit" id="hours">
-            <div class="panel panel-top bg-top">00</div>
-            <div class="panel panel-bottom bg-bottom">00</div>
-            <div class="panel panel-top flap-top">00</div>
-            <div class="panel panel-bottom flap-bottom">00</div>
-        </div>
+    <div class="clock-container">
+        <div class="clock">
+            <div class="flip-unit" id="hours">
+                <div class="panel panel-top bg-top">00</div>
+                <div class="panel panel-bottom bg-bottom">00</div>
+                <div class="panel panel-top flap-top">00</div>
+                <div class="panel panel-bottom flap-bottom">00</div>
+            </div>
 
-        <div class="flip-unit" id="minutes">
-            <div class="panel panel-top bg-top">00</div>
-            <div class="panel panel-bottom bg-bottom">00</div>
-            <div class="panel panel-top flap-top">00</div>
-            <div class="panel panel-bottom flap-bottom">00</div>
+            <div class="flip-unit" id="minutes">
+                <div class="panel panel-top bg-top">00</div>
+                <div class="panel panel-bottom bg-bottom">00</div>
+                <div class="panel panel-top flap-top">00</div>
+                <div class="panel panel-bottom flap-bottom">00</div>
+            </div>
         </div>
+        
+        <div class="date-display" id="date"></div>
     </div>
 
     <script>
         let lastH, lastM;
+        const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
         function updateClock() {
             const now = new Date();
+            
+            // --- Time Logic ---
             const h = String(now.getHours()).padStart(2, '0');
             const m = String(now.getMinutes()).padStart(2, '0');
 
@@ -142,6 +159,15 @@
                 else initCard('minutes', m);
                 lastM = m;
             }
+
+            // --- Date Logic ---
+            const dayName = daysOfWeek[now.getDay()];
+            const dateNum = String(now.getDate()).padStart(2, '0');
+            // getMonth() is 0-indexed (Jan is 0), so we add 1
+            const monthNum = String(now.getMonth() + 1).padStart(2, '0'); 
+            
+            const dateString = `${dayName}, ${dateNum}/${monthNum}`;
+            document.getElementById('date').textContent = dateString;
         }
 
         function initCard(id, value) {
@@ -159,18 +185,15 @@
             const flapTop = unit.querySelector('.flap-top');
             const flapBottom = unit.querySelector('.flap-bottom');
 
-            // 1. Prepare the elements for the visual flip
-            bgTop.textContent = newVal;       // The static top background waits with the NEW number
-            bgBottom.textContent = oldVal;    // The static bottom stays on the OLD number
-            flapTop.textContent = oldVal;     // The falling flap shows the OLD number
-            flapBottom.textContent = newVal;  // The finishing flap shows the NEW number
+            bgTop.textContent = newVal;       
+            bgBottom.textContent = oldVal;    
+            flapTop.textContent = oldVal;     
+            flapBottom.textContent = newVal;  
 
-            // 2. Trigger the CSS animation
             unit.classList.remove('flipping');
-            void unit.offsetWidth; // This forces the browser to reset the animation
+            void unit.offsetWidth; 
             unit.classList.add('flipping');
 
-            // 3. Clean up the DOM after the 600ms animation finishes
             setTimeout(() => {
                 bgBottom.textContent = newVal;
                 flapTop.textContent = newVal;
