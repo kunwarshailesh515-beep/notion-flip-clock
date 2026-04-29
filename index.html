@@ -36,7 +36,6 @@
       align-items: center;
       justify-content: center;
       font-family: "Inter", -apple-system, sans-serif;
-      transition: background 0.3s;
     }
 
     .clock-wrap {
@@ -57,19 +56,18 @@
     }
 
     .flip-unit {
-      position: relative;
+      position: relative;  /* critical: panels are absolute inside this */
+      display: block;
       width: 28cqw;
       height: 37cqw;
-      border-radius: 5px;
       font-size: 20cqw;
       font-weight: bold;
       color: var(--text);
       perspective: 600px;
-      flex-shrink: 0;
     }
 
     .panel {
-      position: absolute;
+      position: absolute;  /* all 4 panels sit on top of each other */
       left: 0;
       width: 100%;
       height: 50%;
@@ -134,16 +132,16 @@
   <div class="clock-wrap">
     <div class="clock-row">
       <div class="flip-unit" id="hours">
-        <div class="panel panel-top bg-top">00</div>
-        <div class="panel panel-bottom bg-bottom">00</div>
-        <div class="panel panel-top flap-top">00</div>
-        <div class="panel panel-bottom flap-bottom">00</div>
+        <div class="panel panel-top bg-top"></div>
+        <div class="panel panel-bottom bg-bottom"></div>
+        <div class="panel panel-top flap-top"></div>
+        <div class="panel panel-bottom flap-bottom"></div>
       </div>
       <div class="flip-unit" id="minutes">
-        <div class="panel panel-top bg-top">00</div>
-        <div class="panel panel-bottom bg-bottom">00</div>
-        <div class="panel panel-top flap-top">00</div>
-        <div class="panel panel-bottom flap-bottom">00</div>
+        <div class="panel panel-top bg-top"></div>
+        <div class="panel panel-bottom bg-bottom"></div>
+        <div class="panel panel-top flap-top"></div>
+        <div class="panel panel-bottom flap-bottom"></div>
       </div>
     </div>
     <div class="date-label" id="date"></div>
