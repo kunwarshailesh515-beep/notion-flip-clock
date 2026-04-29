@@ -35,7 +35,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 30px; /* Space between clock and date */
+            gap: 10px; /* Space between clock and date */
         }
 
         .clock {
@@ -43,13 +43,13 @@
             gap: 15px;
         }
 
-        /* Scaled down by 15% */
+        /* Scaled down by 15% and an additional 25% */
         .flip-unit {
             position: relative;
-            width: 102px;   /* Was 120px */
-            height: 136px;  /* Was 160px */
+            width: 72px;   /* Was 120px */
+            height: 96px;  /* Was 160px */
             border-radius: 8px;
-            font-size: 68px; /* Was 80px */
+            font-size: 48px; /* Was 80px */
             font-weight: bold;
             color: var(--text-color);
             box-shadow: 0 10px 20px rgba(0,0,0,0.4);
@@ -71,7 +71,7 @@
         .panel-top {
             top: 0;
             border-radius: 8px 8px 0 0;
-            line-height: 136px; /* Scaled to match new height */
+            line-height: 96px; /* Scaled to match new height */
             border-bottom: 1px solid var(--line); 
             transform-origin: bottom; 
         }
@@ -108,7 +108,7 @@
         /* Styling for the new date text */
         .date-display {
             color: var(--text-color);
-            font-size: 22px;
+            font-size: 14px;
             font-weight: 500;
             letter-spacing: 2px;
             opacity: 0.9;
@@ -166,7 +166,7 @@
             // getMonth() is 0-indexed (Jan is 0), so we add 1
             const monthNum = String(now.getMonth() + 1).padStart(2, '0'); 
             
-            const dateString = `${dayName}, ${dateNum}/${monthNum}`;
+            const dateString = `${dayName} ${dateNum}|${monthNum}`;
             document.getElementById('date').textContent = dateString;
         }
 
