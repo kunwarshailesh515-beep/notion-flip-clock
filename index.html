@@ -1,223 +1,200 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-        --bg-color: #191919;
-        --card-bg: #383836;
-        --text-color: #ffffff;
-        --line: rgba(0, 0, 0, 0.3);
+      --bg: #191919;
+      --card: #383836;
+      --text: #ffffff;
+      --line: rgba(0,0,0,0.35);
+      --date: rgba(255,255,255,0.6);
     }
 
     @media (prefers-color-scheme: light) {
-        :root {
-            --bg-color: #ffffff;
-            --card-bg: #f7f7f7;
-            --text-color: #37352f;
-            --line: rgba(0, 0, 0, 0.1);
-        }
+      :root {
+        --bg: #ffffff;
+        --card: #f0f0ee;
+        --text: #37352f;
+        --line: rgba(0,0,0,0.15);
+        --date: rgba(55,53,47,0.55);
+      }
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
     }
 
     body {
-        background-color: var(--bg-color);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-        /* Prevents scrollbars from appearing during animations */
-        overflow: hidden; 
-        font-family: "Inter", -apple-system, sans-serif;
-        transition: background-color 0.3s ease;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Inter", -apple-system, sans-serif;
+      transition: background 0.3s;
     }
 
-    .clock-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        /* Responsive gap based on widget width */
-        gap: 4cqw; 
-        width: 90%;
-        /* This line tells the clock to scale based on its own container width */
-        container-type: inline-size;
+    .clock-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      gap: 3cqw;
+      container-type: inline-size;
+      padding: 4cqw 2cqw;
     }
 
-    .clock {
-        display: flex;
-        gap: 2cqw;
+    .clock-row {
+      display: flex;
+      gap: 2cqw;
     }
 
     .flip-unit {
-        position: relative;
-        /* Using cqw ensures the cards shrink as you drag the Notion block */
-        width: 35cqw;
-        max-width: 72px;  /* Your requested 25% reduced size as a cap */
-        height: 46cqw;
-        max-height: 96px;
-        border-radius: 5px;
-        font-size: 24cqw;
-        font-weight: bold;
-        color: var(--text-color);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-        perspective: 1000px; 
+      position: relative;
+      width: 28cqw;
+      height: 37cqw;
+      border-radius: 5px;
+      font-size: 20cqw;
+      font-weight: bold;
+      color: var(--text);
+      perspective: 600px;
+      flex-shrink: 0;
     }
 
     .panel {
-        position: absolute;
-        left: 0;
-        width: 100%;
-        height: 50%;
-        background: var(--card-bg);
-        overflow: hidden;
-        text-align: center;
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 50%;
+      background: var(--card);
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
     .panel-top {
-        top: 0;
-        border-radius: 5px 5px 0 0;
-        /* Keeps text centered vertically while scaling */
-        line-height: 46cqw; 
-        max-line-height: 96px;
-        border-bottom: 1px solid var(--line); 
-        transform-origin: bottom; 
-    }
-
-    /* Fix for centering the top half: we must ensure max-line-height matches max-height */
-    @media (min-width: 200px) {
-        .panel-top { line-height: 96px; }
+      top: 0;
+      border-radius: 5px 5px 0 0;
+      align-items: flex-end;
+      padding-bottom: 0.5cqw;
+      border-bottom: 1px solid var(--line);
+      transform-origin: bottom;
     }
 
     .panel-bottom {
-        bottom: 0;
-        border-radius: 0 0 5px 5px;
-        line-height: 0; 
-        transform-origin: top; 
+      bottom: 0;
+      border-radius: 0 0 5px 5px;
+      align-items: flex-start;
+      padding-top: 0.5cqw;
+      transform-origin: top;
     }
 
-    .bg-top { z-index: 1; }
+    .bg-top    { z-index: 1; }
     .bg-bottom { z-index: 1; }
-    .flap-top { z-index: 2; transform: rotateX(0deg); }
+    .flap-top  { z-index: 2; transform: rotateX(0deg); }
     .flap-bottom { z-index: 2; transform: rotateX(90deg); }
 
     .flipping .flap-top {
-        animation: flipDownTop 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+      animation: flipTop 0.3s cubic-bezier(0.4,0,1,1) forwards;
     }
     .flipping .flap-bottom {
-        animation: flipDownBottom 0.3s cubic-bezier(0, 0, 0.2, 1) 0.3s forwards;
+      animation: flipBot 0.3s cubic-bezier(0,0,0.2,1) 0.3s forwards;
     }
 
-    @keyframes flipDownTop {
-        0% { transform: rotateX(0deg); }
-        100% { transform: rotateX(-90deg); }
+    @keyframes flipTop {
+      from { transform: rotateX(0deg); }
+      to   { transform: rotateX(-90deg); }
     }
 
-    @keyframes flipDownBottom {
-        0% { transform: rotateX(90deg); }
-        100% { transform: rotateX(0deg); }
+    @keyframes flipBot {
+      from { transform: rotateX(90deg); }
+      to   { transform: rotateX(0deg); }
     }
 
-    .date-display {
-        color: var(--text-color);
-        font-size: 6cqw; /* Scalable font size */
-        max-font-size: 14px;
-        font-weight: 500;
-        letter-spacing: 0.5em; /* Increased letter spacing */
-        opacity: 0.75;
-        white-space: nowrap;
+    .date-label {
+      font-size: 4cqw;
+      font-weight: 500;
+      letter-spacing: 0.4em;
+      color: var(--date);
+      white-space: nowrap;
     }
-</style>
+  </style>
 </head>
 <body>
 
-    <div class="clock-container">
-        <div class="clock">
-            <div class="flip-unit" id="hours">
-                <div class="panel panel-top bg-top">00</div>
-                <div class="panel panel-bottom bg-bottom">00</div>
-                <div class="panel panel-top flap-top">00</div>
-                <div class="panel panel-bottom flap-bottom">00</div>
-            </div>
-
-            <div class="flip-unit" id="minutes">
-                <div class="panel panel-top bg-top">00</div>
-                <div class="panel panel-bottom bg-bottom">00</div>
-                <div class="panel panel-top flap-top">00</div>
-                <div class="panel panel-bottom flap-bottom">00</div>
-            </div>
-        </div>
-        
-        <div class="date-display" id="date"></div>
+  <div class="clock-wrap">
+    <div class="clock-row">
+      <div class="flip-unit" id="hours">
+        <div class="panel panel-top bg-top">00</div>
+        <div class="panel panel-bottom bg-bottom">00</div>
+        <div class="panel panel-top flap-top">00</div>
+        <div class="panel panel-bottom flap-bottom">00</div>
+      </div>
+      <div class="flip-unit" id="minutes">
+        <div class="panel panel-top bg-top">00</div>
+        <div class="panel panel-bottom bg-bottom">00</div>
+        <div class="panel panel-top flap-top">00</div>
+        <div class="panel panel-bottom flap-bottom">00</div>
+      </div>
     </div>
+    <div class="date-label" id="date"></div>
+  </div>
 
-    <script>
-        let lastH, lastM;
-        const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  <script>
+    let lastH, lastM;
+    const days = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
 
-        function updateClock() {
-            const now = new Date();
-            
-            // --- Time Logic ---
-            const h = String(now.getHours()).padStart(2, '0');
-            const m = String(now.getMinutes()).padStart(2, '0');
+    function initCard(id, v) {
+      document.getElementById(id).querySelectorAll('.panel').forEach(p => p.textContent = v);
+    }
 
-            if (h !== lastH) {
-                if (lastH !== undefined) triggerFlip('hours', lastH, h);
-                else initCard('hours', h);
-                lastH = h;
-            }
+    function triggerFlip(id, oldV, newV) {
+      const unit = document.getElementById(id);
+      unit.querySelector('.bg-top').textContent = newV;
+      unit.querySelector('.bg-bottom').textContent = oldV;
+      unit.querySelector('.flap-top').textContent = oldV;
+      unit.querySelector('.flap-bottom').textContent = newV;
+      unit.classList.remove('flipping');
+      void unit.offsetWidth;
+      unit.classList.add('flipping');
+      setTimeout(() => {
+        unit.querySelector('.bg-bottom').textContent = newV;
+        unit.querySelector('.flap-top').textContent = newV;
+        unit.classList.remove('flipping');
+      }, 620);
+    }
 
-            if (m !== lastM) {
-                if (lastM !== undefined) triggerFlip('minutes', lastM, m);
-                else initCard('minutes', m);
-                lastM = m;
-            }
+    function tick() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
 
-            // --- Date Logic ---
-            const dayName = daysOfWeek[now.getDay()];
-            const dateNum = String(now.getDate()).padStart(2, '0');
-            // getMonth() is 0-indexed (Jan is 0), so we add 1
-            const monthNum = String(now.getMonth() + 1).padStart(2, '0'); 
-            
-            const dateString = `${dayName} ${dateNum}|${monthNum}`;
-            document.getElementById('date').textContent = dateString;
-        }
+      if (h !== lastH) {
+        lastH === undefined ? initCard('hours', h) : triggerFlip('hours', lastH, h);
+        lastH = h;
+      }
+      if (m !== lastM) {
+        lastM === undefined ? initCard('minutes', m) : triggerFlip('minutes', lastM, m);
+        lastM = m;
+      }
 
-        function initCard(id, value) {
-            const unit = document.getElementById(id);
-            unit.querySelector('.bg-top').textContent = value;
-            unit.querySelector('.bg-bottom').textContent = value;
-            unit.querySelector('.flap-top').textContent = value;
-            unit.querySelector('.flap-bottom').textContent = value;
-        }
+      const d  = now.getDate().toString().padStart(2, '0');
+      const mo = (now.getMonth() + 1).toString().padStart(2, '0');
+      document.getElementById('date').textContent = days[now.getDay()] + '  ' + d + '|' + mo;
+    }
 
-        function triggerFlip(id, oldVal, newVal) {
-            const unit = document.getElementById(id);
-            const bgTop = unit.querySelector('.bg-top');
-            const bgBottom = unit.querySelector('.bg-bottom');
-            const flapTop = unit.querySelector('.flap-top');
-            const flapBottom = unit.querySelector('.flap-bottom');
+    setInterval(tick, 1000);
+    tick();
+  </script>
 
-            bgTop.textContent = newVal;       
-            bgBottom.textContent = oldVal;    
-            flapTop.textContent = oldVal;     
-            flapBottom.textContent = newVal;  
-
-            unit.classList.remove('flipping');
-            void unit.offsetWidth; 
-            unit.classList.add('flipping');
-
-            setTimeout(() => {
-                bgBottom.textContent = newVal;
-                flapTop.textContent = newVal;
-                unit.classList.remove('flipping');
-            }, 600);
-        }
-
-        setInterval(updateClock, 1000);
-        updateClock();
-    </script>
 </body>
 </html>
